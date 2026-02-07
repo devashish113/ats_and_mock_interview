@@ -1,0 +1,20 @@
+# Python Dependencies for ATS Resume Converter Backend
+
+# Web Framework
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+
+# File Processing
+python-docx==1.1.0
+PyMuPDF==1.23.8
+
+# AI & NLP
+groq==0.4.2
+spacy==3.7.2
+
+# Environment & Utilities
+python-dotenv==1.0.0
+python-multipart==0.0.6
+
+# CORS
+aiofiles==23.2.1

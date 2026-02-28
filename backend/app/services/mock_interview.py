@@ -55,9 +55,6 @@ class InterviewSession:
 # In-memory session storage
 INTERVIEW_SESSIONS: Dict[str, InterviewSession] = {}
 
-# Supported roles for interview
-SUPPORTED_ROLES = ["DevOps", "Backend", "Cloud", "General IT"]
-
 
 # ============== Helper Functions ==============
 

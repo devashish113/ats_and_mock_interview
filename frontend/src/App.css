@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
 /* ===================================
    ATS Resume Converter - Main Styles
    =================================== */
@@ -15,18 +17,26 @@
   --success: #38ef7d;
   --danger: #f5576c;
   --warning: #fda085;
-
-  --bg-dark: #0f0f1a;
-  --bg-card: rgba(30, 30, 50, 0.8);
-  --bg-card-hover: rgba(40, 40, 60, 0.9);
+  --bg-dark: transparent;
+  --bg-card: rgba(255, 255, 255, 0.05);
+  --bg-card-hover: rgba(255, 255, 255, 0.1);
 
   --text-primary: #ffffff;
-  --text-secondary: #a0aec0;
-  --text-muted: #718096;
+  --text-secondary: rgba(255, 255, 255, 0.85);
+  --text-muted: rgba(255, 255, 255, 0.6);
 
-  --border-color: rgba(255, 255, 255, 0.1);
-  --shadow-lg: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-  --shadow-xl: 0 35px 60px -15px rgba(0, 0, 0, 0.6);
+  --border-color: rgba(255, 255, 255, 0.2);
+  --border-light: rgba(255, 255, 255, 0.05);
+  --shadow-lg: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-xl: 0 16px 40px 0 rgba(0, 0, 0, 0.45);
+
+  /* Cards get no blur per user request */
+  --glass-blur: blur(0px);
+  --glass-blur-webkit: blur(0px);
+
+  /* Buttons get standard blur */
+  --button-blur: blur(10px);
+  --button-blur-webkit: blur(10px);
 
   --radius-sm: 8px;
   --radius-md: 12px;
@@ -44,7 +54,7 @@
 }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Outfit', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   background: var(--bg-dark);
   color: var(--text-primary);
   line-height: 1.6;
@@ -55,24 +65,78 @@ body {
 /* Animated Background */
 .app-container {
   min-height: 100vh;
-  background:
-    radial-gradient(ellipse at 20% 0%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 100%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
-    radial-gradient(ellipse at 50% 50%, rgba(17, 153, 142, 0.05) 0%, transparent 70%),
-    var(--bg-dark);
   position: relative;
+  /* We use the video as the main background now, but keep a dark overlay for readability */
+  background: rgba(10, 10, 15, 0.4);
 }
 
-.app-container::before {
-  content: '';
+.app-video-bg {
   position: fixed;
   top: 0;
   left: 0;
-  right: 0;
-  bottom: 0;
-  background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23667eea' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
+  width: 100vw;
+  height: 100vh;
+  object-fit: cover;
+  z-index: -1;
+  /* Slight opacity so it's not too overwhelming */
+}
+
+/* Cinematic Loader */
+.premium-loader {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: var(--bg-dark);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Inter', sans-serif;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+}
+
+.loader-content {
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+}
+
+.loader-logo {
+  font-size: 3rem;
+  width: 80px;
+  height: 80px;
+  margin-bottom: 10px;
+  box-shadow: 0 0 50px rgba(102, 126, 234, 0.4);
+}
+
+.loader-content h2 {
+  font-size: 2rem;
+  letter-spacing: 0.5em;
+  font-weight: 800;
+  background: var(--primary-gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 30px;
+  text-transform: uppercase;
+}
+
+.loader-progress-bar {
+  width: 250px;
+  height: 2px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.loader-progress-fill {
+  height: 100%;
+  background: var(--primary-gradient);
 }
 
 /* Header */
@@ -155,30 +219,24 @@ body {
 
 /* Upload Section */
 .upload-section {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  padding: 50px;
-  margin-bottom: 40px;
-  box-shadow: var(--shadow-lg);
+  background: transparent;
+  padding: 30px;
+  max-width: 800px;
+  margin: 0 auto 40px;
   transition: all 0.3s ease;
-}
-
-.upload-section:hover {
-  border-color: rgba(102, 126, 234, 0.3);
-  box-shadow: var(--shadow-xl), 0 0 60px rgba(102, 126, 234, 0.1);
 }
 
 /* Dropzone */
 .dropzone {
   border: 2px dashed rgba(102, 126, 234, 0.4);
   border-radius: var(--radius-lg);
-  padding: 60px 40px;
+  padding: 40px 30px;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  background: rgba(102, 126, 234, 0.03);
+  background: rgba(102, 126, 234, 0.05);
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .dropzone:hover,
@@ -231,6 +289,8 @@ body {
   border-radius: var(--radius-md);
   padding: 15px 20px;
   margin-top: 20px;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .selected-file-info {
@@ -288,6 +348,8 @@ body {
   font-size: 0.95rem;
   resize: vertical;
   transition: all 0.2s ease;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .job-description-section textarea:focus {
@@ -314,28 +376,34 @@ body {
   cursor: pointer;
   transition: all 0.3s ease;
   text-decoration: none;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .btn-primary {
-  background: var(--primary-gradient);
+  background: rgba(102, 126, 234, 0.2);
+  border: 1px solid rgba(102, 126, 234, 0.4);
   color: white;
-  box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.2);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(102, 126, 234, 0.4);
+  background: rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
 }
 
 .btn-secondary {
-  background: var(--secondary-gradient);
+  background: rgba(17, 153, 142, 0.2);
+  border: 1px solid rgba(17, 153, 142, 0.4);
   color: white;
-  box-shadow: 0 10px 30px rgba(17, 153, 142, 0.3);
+  box-shadow: 0 4px 15px rgba(17, 153, 142, 0.2);
 }
 
 .btn-secondary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(17, 153, 142, 0.4);
+  background: rgba(17, 153, 142, 0.3);
+  box-shadow: 0 8px 25px rgba(17, 153, 142, 0.3);
 }
 
 .btn-outline {
@@ -396,14 +464,10 @@ body {
 
 /* Score Card */
 .score-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  background: transparent;
   padding: 40px;
   margin-bottom: 30px;
   text-align: center;
-  box-shadow: var(--shadow-lg);
 }
 
 .score-ring {
@@ -503,10 +567,13 @@ body {
 }
 
 .breakdown-item {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 20px;
   text-align: left;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .breakdown-item-header {
@@ -549,12 +616,8 @@ body {
 }
 
 .feedback-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-lg);
+  background: transparent;
   padding: 30px;
-  box-shadow: var(--shadow-lg);
 }
 
 .feedback-card h3 {
@@ -577,14 +640,15 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  padding: 12px 0;
-  border-bottom: 1px solid var(--border-color);
+  padding: 15px;
+  margin-bottom: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-light);
   font-size: 0.95rem;
   color: var(--text-secondary);
-}
-
-.feedback-list li:last-child {
-  border-bottom: none;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .feedback-list li .bullet {
@@ -605,13 +669,9 @@ body {
 
 /* Job Match Card */
 .job-match-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  background: transparent;
   padding: 40px;
   margin-bottom: 30px;
-  box-shadow: var(--shadow-lg);
 }
 
 .job-match-card h3 {
@@ -826,14 +886,10 @@ body {
 }
 
 .setup-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  background: transparent;
   padding: 50px;
   text-align: center;
   max-width: 500px;
-  box-shadow: var(--shadow-lg);
 }
 
 .setup-card h3 {
@@ -889,6 +945,8 @@ body {
     linear-gradient(135deg, rgba(102, 126, 234, 0.5), rgba(118, 75, 162, 0.5));
   background-origin: border-box;
   background-clip: padding-box, border-box;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .role-input:hover {
@@ -919,6 +977,8 @@ body {
   color: var(--text-primary);
   font-size: 1rem;
   cursor: pointer;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .role-selector select:focus {
@@ -928,14 +988,16 @@ body {
 
 /* Mock Interview Button */
 .btn-interview {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: rgba(240, 147, 251, 0.2);
+  border: 1px solid rgba(240, 147, 251, 0.4);
   color: white;
-  box-shadow: 0 10px 30px rgba(240, 147, 251, 0.3);
+  box-shadow: 0 4px 15px rgba(240, 147, 251, 0.2);
 }
 
 .btn-interview:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 15px 40px rgba(240, 147, 251, 0.4);
+  background: rgba(240, 147, 251, 0.3);
+  box-shadow: 0 8px 25px rgba(240, 147, 251, 0.3);
 }
 
 .start-btn {
@@ -967,12 +1029,8 @@ body {
 
 /* Interview Chat */
 .interview-chat {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
-  overflow: hidden;
-  box-shadow: var(--shadow-lg);
+  background: transparent;
+  padding: 10px;
 }
 
 /* Progress */
@@ -1035,9 +1093,12 @@ body {
 
 .message-content {
   background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 15px 18px;
   max-width: 75%;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .user-content {
@@ -1259,12 +1320,8 @@ body {
 }
 
 .report-card {
-  background: var(--bg-card);
-  backdrop-filter: blur(20px);
-  border: 1px solid var(--border-color);
-  border-radius: var(--radius-xl);
+  background: transparent;
   padding: 40px;
-  box-shadow: var(--shadow-lg);
 }
 
 .report-card h3 {
@@ -1341,10 +1398,13 @@ body {
 }
 
 .qa-item {
-  background: rgba(255, 255, 255, 0.03);
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
   border-radius: var(--radius-md);
   padding: 20px;
   margin-bottom: 15px;
+  backdrop-filter: var(--button-blur);
+  -webkit-backdrop-filter: var(--button-blur-webkit);
 }
 
 .qa-question {

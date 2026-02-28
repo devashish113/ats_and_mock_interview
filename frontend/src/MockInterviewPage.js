@@ -1,14 +1,15 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // API Base URL
-const API_URL = 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 // Example roles for placeholder text
 const ROLE_EXAMPLES = 'e.g., DevOps, Backend Developer, Cloud Engineer, Data Scientist...';
 
 function MockInterviewPage({ fileId, onBack }) {
   // Interview state
-  const [role, setRole] = useState('Backend');
+  const [role, setRole] = useState('');
   const [sessionId, setSessionId] = useState(null);
   const [currentQuestion, setCurrentQuestion] = useState('');
   const [questionIndex, setQuestionIndex] = useState(0);
@@ -234,36 +235,16 @@ function MockInterviewPage({ fileId, onBack }) {
     }
   };
 
-  // Start speech recognition
-  const startListening = () => {
+  // Ref to accumulate all FINAL speech results across auto-restarts
+  const finalWordsRef = useRef('');
+
+  // Initialize speech recognition instance
+  const initRecognition = () => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setError('Speech recognition not supported in this browser. Please use Chrome or Edge, or use the text input.');
-      return;
+      return null;
     }
-
-    // Prevent starting if already restarting
-    if (isRestartingRef.current) {
-      console.log('⏳ Already restarting, ignoring start request');
-      return;
-    }
-
-    // Stop any existing recognition
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.abort();
-      } catch (e) {}
-      recognitionRef.current = null;
-    }
-
-    stopSpeaking(); // Stop AI speaking when user wants to talk
-    manualStopRef.current = false;
-    transcriptRef.current = '';
-    setTranscript('');
-    setError('');
-    
-    // Set listening immediately to prevent UI flicker
-    setIsListening(true);
 
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
@@ -274,58 +255,55 @@ function MockInterviewPage({ fileId, onBack }) {
     recognition.onstart = () => {
       console.log('🎤 Speech recognition started');
       isRestartingRef.current = false;
+      setIsListening(true);
     };
 
     recognition.onresult = (event) => {
-      let interimTranscript = '';
-      let finalTranscript = '';
+      let sessionFinal = '';
+      let sessionInterim = '';
 
       for (let i = 0; i < event.results.length; i++) {
         const result = event.results[i];
         if (result.isFinal) {
-          finalTranscript += result[0].transcript + ' ';
+          sessionFinal += result[0].transcript + ' ';
         } else {
-          interimTranscript += result[0].transcript;
+          sessionInterim += result[0].transcript;
         }
       }
 
-      const combined = (finalTranscript + interimTranscript).trim();
-      transcriptRef.current = combined;
-      setTranscript(combined);
+      // Build the display text: all accumulated finals + current session text
+      const displayText = (finalWordsRef.current + sessionFinal + sessionInterim).trim();
+      transcriptRef.current = displayText;
+      setTranscript(displayText);
     };
 
     recognition.onerror = (event) => {
       console.log('⚠️ Speech recognition error:', event.error);
-      
-      // Only handle truly fatal errors
       if (event.error === 'not-allowed' || event.error === 'service-not-allowed') {
         setError('Microphone access denied. Please allow microphone access and refresh.');
         setSpeechSupported(false);
         setIsListening(false);
         isRestartingRef.current = false;
       }
-      // For network, no-speech, aborted and other errors, let onend handle restart
-      // These are often temporary and will recover on retry
+      // All other errors (network, no-speech, aborted) → let onend handle restart
     };
 
     recognition.onend = () => {
-      console.log('🛑 Recognition ended, manualStop:', manualStopRef.current, 'restarting:', isRestartingRef.current);
+      console.log('🛑 Recognition ended. manualStop:', manualStopRef.current);
       
-      // Don't restart if manually stopped or already restarting
+      // Capture final words from this session into the accumulator
+      // transcriptRef has the latest display text; use it as the new base
+      finalWordsRef.current = transcriptRef.current;
+
       if (manualStopRef.current) {
         setIsListening(false);
         isRestartingRef.current = false;
         return;
       }
       
-      // Prevent overlapping restarts
-      if (isRestartingRef.current) {
-        return;
-      }
-      
+      if (isRestartingRef.current) return;
       isRestartingRef.current = true;
       
-      // Auto-restart with debounce - DON'T change isListening state
       setTimeout(() => {
         if (manualStopRef.current) {
           setIsListening(false);
@@ -333,27 +311,52 @@ function MockInterviewPage({ fileId, onBack }) {
           return;
         }
         
-        console.log('🔄 Auto-restarting recognition...');
-        try {
-          recognition.start();
-        } catch (e) {
-          console.log('Auto-restart failed:', e.message);
-          // Only set isListening false if restart truly failed
-          setIsListening(false);
-          isRestartingRef.current = false;
+        console.log('🔄 Auto-restarting recognition (new instance)...');
+        const newRecognition = initRecognition();
+        if (newRecognition) {
+          recognitionRef.current = newRecognition;
+          try {
+            newRecognition.start();
+          } catch (e) {
+            console.error('Auto-restart failed:', e);
+            setIsListening(false);
+            isRestartingRef.current = false;
+          }
         }
-      }, 500);
+      }, 300);
     };
 
-    recognitionRef.current = recognition;
-    
-    try {
-      recognition.start();
-      console.log('🎤 Recognition.start() called');
-    } catch (e) {
-      console.error('Failed to start recognition:', e);
-      setError('Failed to start microphone. Please refresh the page and try again.');
-      setIsListening(false);
+    return recognition;
+  };
+
+  // Start speech recognition (user clicks Speak)
+  const startListening = () => {
+    if (isRestartingRef.current) return;
+
+    if (recognitionRef.current) {
+      try { recognitionRef.current.abort(); } catch (e) {}
+      recognitionRef.current = null;
+    }
+
+    stopSpeaking(); 
+    manualStopRef.current = false;
+    finalWordsRef.current = '';
+    transcriptRef.current = '';
+    setTranscript('');
+    setError('');
+    setIsListening(true);
+
+    const recognition = initRecognition();
+    if (recognition) {
+      recognitionRef.current = recognition;
+      try {
+        recognition.start();
+        console.log('🎤 Recognition.start() called');
+      } catch (e) {
+        console.error('Failed to start recognition:', e);
+        setError('Failed to start microphone. Please refresh the page and try again.');
+        setIsListening(false);
+      }
     }
   };
 
@@ -373,14 +376,17 @@ function MockInterviewPage({ fileId, onBack }) {
     
     setIsListening(false);
     
-    // Submit the accumulated transcript
-    const finalTranscript = transcriptRef.current.trim();
-    console.log('📤 Submitting transcript:', finalTranscript);
-    if (finalTranscript) {
-      submitAnswer(finalTranscript);
-    } else {
-      setError('No speech was detected. Please try again or use the text input.');
-    }
+    // Small delay to let any last onresult/onend fire and flush data
+    setTimeout(() => {
+      // Use the best transcript we have: transcriptRef (latest) or finalWordsRef (accumulated)
+      const bestTranscript = (transcriptRef.current || finalWordsRef.current || '').trim();
+      console.log('📤 Submitting transcript:', bestTranscript);
+      if (bestTranscript) {
+        submitAnswer(bestTranscript);
+      } else {
+        setError('No speech was detected. Please try again or use the text input.');
+      }
+    }, 150);
   };
 
   // Handle text input submit
@@ -413,7 +419,12 @@ function MockInterviewPage({ fileId, onBack }) {
 
       {/* Pre-Interview Setup */}
       {!sessionId && !isComplete && (
-        <div className="interview-setup">
+        <motion.div 
+          className="interview-setup"
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
           <div className="setup-card">
             <h3>Prepare for Your Mock Interview</h3>
             <p>Enter your target role and start your voice-based interview. The AI will ask questions based on your resume.</p>
@@ -458,7 +469,7 @@ function MockInterviewPage({ fileId, onBack }) {
               </p>
             )}
           </div>
-        </div>
+        </motion.div>
       )}
 
       {/* Error Display */}
@@ -472,7 +483,12 @@ function MockInterviewPage({ fileId, onBack }) {
 
       {/* Interview Chat Interface */}
       {sessionId && (
-        <div className="interview-chat">
+        <motion.div 
+          className="interview-chat"
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.5 }}
+        >
           {/* Progress Bar */}
           <div className="interview-progress">
             <div className="progress-label">
@@ -597,12 +613,17 @@ function MockInterviewPage({ fileId, onBack }) {
               )}
             </div>
           )}
-        </div>
+        </motion.div>
       )}
 
       {/* Interview Report */}
       {isComplete && report && (
-        <div className="interview-report">
+        <motion.div 
+          className="interview-report"
+          initial={{ opacity: 0, y: 40 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+        >
           <div className="report-card">
             <h3>📊 Interview Report</h3>
 
@@ -645,7 +666,7 @@ function MockInterviewPage({ fileId, onBack }) {
               🔄 Start New Interview
             </button>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

@@ -1,4 +1,4 @@
-# Backend Dockerfile for ATS Resume Converter
+# Backend Dockerfile for CareerPrep AI (ATS Resume & Mock Interview)
 FROM python:3.10-slim
 
 # Set working directory

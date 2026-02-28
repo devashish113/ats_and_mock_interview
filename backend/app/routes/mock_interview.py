@@ -77,13 +77,6 @@ async def start_interview(request: StartInterviewRequest):
     Returns session_id and first interview question.
     """
     try:
-        # Validate role
-        if request.role not in mock_interview.SUPPORTED_ROLES:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Invalid role. Supported: {', '.join(mock_interview.SUPPORTED_ROLES)}"
-            )
-        
         # Get uploaded resume
         file_path = get_uploaded_file(request.file_id)
         
@@ -195,8 +188,3 @@ async def get_interview_report(session_id: str):
         logger.error(f"Error getting report: {str(e)}")
         raise HTTPException(status_code=500, detail=f"Failed to get report: {str(e)}")
 
-
-@router.get("/roles")
-async def get_supported_roles():
-    """Get list of supported interview roles."""
-    return {"roles": mock_interview.SUPPORTED_ROLES}

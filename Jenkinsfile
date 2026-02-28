@@ -1,4 +1,4 @@
-// Jenkinsfile for ATS Resume Converter & Mock Interview Application
+// Jenkinsfile for CareerPrep AI (ATS Resume & Mock Interview Application)
 pipeline {
     agent any
 
@@ -72,7 +72,7 @@ pipeline {
                     steps {
                         dir('frontend') {
                             echo 'Building frontend Docker image...'
-                            sh 'docker build -t ats-frontend:${IMAGE_TAG} -t ats-frontend:latest .'
+                            sh 'docker build --build-arg REACT_APP_API_URL=http://localhost:8000 -t ats-frontend:${IMAGE_TAG} -t ats-frontend:latest .'
                         }
                     }
                 }

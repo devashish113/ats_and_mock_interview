@@ -1,9 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import Lenis from '@studio-freight/lenis';
+import Particles, { initParticlesEngine } from '@tsparticles/react';
+import { loadSlim } from '@tsparticles/slim';
 import MockInterviewPage from './MockInterviewPage';
 import './App.css';
 
 // API Base URL
-const API_URL = 'http://localhost:8000';
+const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
 function App() {
   // State management
@@ -18,6 +22,49 @@ function App() {
   const [downloadUrl, setDownloadUrl] = useState(null);
   const [dragActive, setDragActive] = useState(false);
   const [currentPage, setCurrentPage] = useState('resume'); // 'resume' or 'interview'
+  const [initialLoad, setInitialLoad] = useState(true);
+  const [initParticles, setInitParticles] = useState(false);
+
+  // Initialize Particles
+  useEffect(() => {
+    initParticlesEngine(async (engine) => {
+      await loadSlim(engine);
+    }).then(() => {
+      setInitParticles(true);
+    });
+  }, []);
+
+  // Initialize Lenis smooth scrolling
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      direction: 'vertical',
+      gestureDirection: 'vertical',
+      smooth: true,
+      mouseMultiplier: 1,
+      smoothTouch: false,
+      touchMultiplier: 2,
+      infinite: false,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    requestAnimationFrame(raf);
+
+    // Initial loader timeout
+    const loadTimer = setTimeout(() => {
+      setInitialLoad(false);
+    }, 2500);
+
+    return () => {
+      lenis.destroy();
+      clearTimeout(loadTimer);
+    };
+  }, []);
 
   // Handle file selection
   const handleFileSelect = useCallback((selectedFile) => {
@@ -220,51 +267,165 @@ function App() {
 
   return (
     <div className="app-container">
+      {/* Cinematic Loader using Framer Motion */}
+      <AnimatePresence>
+        {initialLoad && (
+          <motion.div
+            className="premium-loader"
+            initial={{ opacity: 1 }}
+            exit={{ opacity: 0, y: -50, filter: 'blur(10px)' }}
+            transition={{ duration: 0.8, ease: [0.76, 0, 0.24, 1] }}
+          >
+            <motion.div 
+              className="loader-content"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ duration: 0.5, delay: 0.2 }}
+            >
+              <div className="logo-icon loader-logo">📄</div>
+              <motion.h2 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.5 }}
+              >
+                ATS SYSTEM
+              </motion.h2>
+              <div className="loader-progress-bar">
+                <motion.div 
+                  className="loader-progress-fill"
+                  initial={{ width: "0%" }}
+                  animate={{ width: "100%" }}
+                  transition={{ duration: 1.5, ease: "easeInOut", delay: 0.2 }}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Video Background */}
+      <video autoPlay loop muted playsInline className="app-video-bg">
+        <source src="/background.mp4" type="video/mp4" />
+      </video>
+
+      {/* Particle Background Layer */}
+      {initParticles && (
+        <Particles
+          id="tsparticles"
+          options={{
+            background: { color: { value: "transparent" } },
+            fpsLimit: 120,
+            interactivity: {
+              events: {
+                onHover: { enable: true, mode: "grab" },
+                resize: true,
+              },
+              modes: {
+                grab: { distance: 140, links: { opacity: 0.5 } }
+              },
+            },
+            particles: {
+              color: { value: "#667eea" },
+              links: {
+                color: "#764ba2",
+                distance: 150,
+                enable: true,
+                opacity: 0.2,
+                width: 1,
+              },
+              move: {
+                direction: "none",
+                enable: true,
+                outModes: { default: "bounce" },
+                random: true,
+                speed: 1.5,
+                straight: false,
+              },
+              number: { density: { enable: true, area: 800 }, value: 60 },
+              opacity: { value: 0.3 },
+              shape: { type: "circle" },
+              size: { value: { min: 1, max: 3 } },
+            },
+            detectRetina: true,
+          }}
+          style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%', zIndex: 0 }}
+        />
+      )}
+
       {/* Header */}
-      <header className="header">
+      <header className="header" style={{ position: 'relative', zIndex: 50 }}>
         <div className="logo">
-          <div className="logo-icon">📄</div>
+          <motion.div 
+            className="logo-icon"
+            whileHover={{ scale: 1.05, rotate: 5 }}
+            transition={{ type: "spring", stiffness: 300 }}
+          >
+            📄
+          </motion.div>
           <div>
-            <h1>ATS Resume Converter</h1>
-            <span className="header-subtitle">AI-Powered Resume Optimization</span>
+            <h1>CareerPrep AI</h1>
+            <span className="header-subtitle">ATS Resumes & Mock Interviews</span>
           </div>
         </div>
-        
-        {/* Navigation Tabs */}
-        <nav className="nav-tabs">
-          <button
-            className={`nav-tab ${currentPage === 'resume' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('resume')}
-          >
-            📄 Resume Converter
-          </button>
-          <button
-            className={`nav-tab ${currentPage === 'interview' ? 'active' : ''}`}
-            onClick={() => setCurrentPage('interview')}
-          >
-            🎤 Mock Interview
-          </button>
-        </nav>
       </header>
 
-      {/* Conditional Page Rendering */}
-      {currentPage === 'interview' ? (
-        <MockInterviewPage 
-          fileId={fileId} 
-          onBack={() => setCurrentPage('resume')} 
-        />
-      ) : (
-      <>
-      {/* Main Content */}
-      <main className="main-content">
-        {/* Hero */}
-        <section className="hero">
-          <h2>Transform Your Resume into an <span>ATS-Friendly</span> Format</h2>
-          <p>Upload your resume, get instant ATS scoring, and download an optimized version that passes automated screening systems.</p>
-        </section>
+      {/* Conditional Page Rendering wrapped in AnimatePresence */}
+      <AnimatePresence mode="wait">
+        {currentPage === 'interview' ? (
+          <motion.div
+            key="interview-page"
+            initial={{ opacity: 0, scale: 0.98, filter: 'blur(5px)' }}
+            animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
+            exit={{ opacity: 0, scale: 0.98, filter: 'blur(5px)' }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            <MockInterviewPage 
+              fileId={fileId} 
+              onBack={() => setCurrentPage('resume')} 
+            />
+          </motion.div>
+        ) : (
+          <motion.main 
+            key="resume-page"
+            className="main-content"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {/* Hero */}
+            <section className="hero">
+              <motion.h2
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+                style={{
+                  background: 'linear-gradient(to right, #ffffff, #a0aec0)',
+                  WebkitBackgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent',
+                  marginBottom: '20px'
+                }}
+              >
+                Optimize Your Resume & <br />
+                <span>Master Your Interview</span>
+              </motion.h2>
+              <motion.p
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.8, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
+              >
+                Get instant ATS scoring for your resume and immediately practice with our voice-enabled AI Mock Interviewer—all in one place.
+              </motion.p>
+            </section>
 
         {/* Upload Section */}
-        <section className="upload-section">
+        <motion.section 
+          className="upload-section"
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-100px" }}
+          transition={{ duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
+        >
           {/* Dropzone */}
           <div
             className={`dropzone ${dragActive ? 'drag-active' : ''}`}
@@ -354,12 +515,25 @@ function App() {
                 <>✨ Generate ATS Resume</>
               )}
             </button>
+            <button
+              className="btn btn-interview"
+              onClick={() => setCurrentPage('interview')}
+              disabled={!fileId || loading}
+            >
+              🎤 Mock Interview
+            </button>
           </div>
-        </section>
+        </motion.section>
 
         {/* Results Section */}
         {analysisResult && (
-          <section className="results-section">
+          <motion.section 
+            className="results-section"
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
             {/* Score Card */}
             <div className="score-card">
               <div className="score-ring">
@@ -493,7 +667,7 @@ function App() {
                 </div>
               </div>
             )}
-          </section>
+          </motion.section>
         )}
 
         {/* Download Section */}
@@ -509,9 +683,9 @@ function App() {
             </a>
           </section>
         )}
-      </main>
-      </>
-      )}
+      </motion.main>
+    )}
+    </AnimatePresence>
     </div>
   );
 }

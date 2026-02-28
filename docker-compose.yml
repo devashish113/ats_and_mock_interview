@@ -1,4 +1,4 @@
-# Docker Compose for ATS Resume Converter
+# Docker Compose for CareerPrep AI (ATS Resume & Mock Interview)
 version: '3.8'
 
 services:
@@ -21,6 +21,8 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
+      args:
+        - REACT_APP_API_URL=http://localhost:8000
     container_name: ats-frontend
     ports:
       - "3000:80"

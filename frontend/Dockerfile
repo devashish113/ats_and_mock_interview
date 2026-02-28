@@ -1,4 +1,4 @@
-# Frontend Dockerfile for ATS Resume Converter
+# Frontend Dockerfile for CareerPrep AI (ATS Resume & Mock Interview)
 
 # Build stage
 FROM node:18-alpine as build
@@ -13,6 +13,10 @@ RUN npm ci --silent
 
 # Copy source code
 COPY . .
+
+# Pass build-time environment variables
+ARG REACT_APP_API_URL
+ENV REACT_APP_API_URL=$REACT_APP_API_URL
 
 # Build the app
 RUN npm run build

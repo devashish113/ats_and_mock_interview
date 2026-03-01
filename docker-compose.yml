@@ -22,10 +22,10 @@ services:
       context: ./frontend
       dockerfile: Dockerfile
       args:
-        - REACT_APP_API_URL=http://localhost:8000
+        - REACT_APP_API_URL=http://13.205.182.228:8000
     container_name: ats-frontend
     ports:
-      - "3000:80"
+      - "80:80"
     depends_on:
       - backend
     restart: unless-stopped
